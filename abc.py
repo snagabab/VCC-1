@@ -4,8 +4,8 @@ import pandas as pd
 st.title("Certificate Viewer - OCP | VCC")
 
 # Load your CSVs
-api_df = pd.read_csv("api_certificate.csv")
-wildcard_df = pd.read_csv("wildcard_certificate.csv")
+api_df = pd.read_csv("api_cert_data.csv")
+wildcard_df = pd.read_csv("wildcard_cert_data.csv")
 
 # Clean column names
 api_df.columns = api_df.columns.str.strip()
