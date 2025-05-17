@@ -3,45 +3,98 @@ import pandas as pd
 
 st.title("Certificate Viewer - OCP | VCC")
 
-# Upload CSV files
-st.sidebar.header("Upload Certificate CSV Files")
-api_cert_file = st.sidebar.file_uploader("Upload API Certificate CSV", type=["csv"])
-wildcard_cert_file = st.sidebar.file_uploader("Upload Wildcard Certificate CSV", type=["csv"])
+# Load CSV files in the background
+api_df = pd.read_csv("api_certificate.csv")
+wildcard_df = pd.read_csv("wildcard_certificate.csv")
 
-if api_cert_file and wildcard_cert_file:
-    # Read CSVs
-    api_df = pd.read_csv(api_cert_file)
-    wildcard_df = pd.read_csv(wildcard_cert_file)
+# Add a column to identify certificate type
+api_df['Certificate_Type'] = 'API Certificate'
+wildcard_df['Certificate_Type'] = 'Wildcard Certificate'
 
-    # Add a source column to distinguish
-    api_df['Certificate_Type'] = 'API Certificate'
-    wildcard_df['Certificate_Type'] = 'Wildcard Certificate'
+# Combine both dataframes
+cert_df = pd.concat([api_df, wildcard_df], ignore_index=True)
 
-    # Combine both DataFrames
-    cert_df = pd.concat([api_df, wildcard_df], ignore_index=True)
+# Assume 'URL_name' or 'Cluster' column represents cluster? 
+# If you want to filter by cluster, we need a column name for it.
+# Assuming you want to filter by 'URL_name' as cluster proxy
+clusters = cert_df['URL_name'].unique()
+clusters = sorted(clusters)
 
-    # Sidebar filters
-    st.sidebar.header("Filter Certificates")
+# Sidebar filters
+st.sidebar.header("Filter Certificates")
 
-    # Unique years and months from data
-    years = cert_df['Expire_Year'].dropna().unique()
-    months = cert_df['Expire_Month'].dropna().unique()
+# Cluster filter (All or specific)
+selected_cluster = st.sidebar.selectbox("Select Cluster", options=["All"] + list(clusters))
 
-    # Select year filter (allow multi-select)
-    selected_years = st.sidebar.multiselect("Select Expire Year(s)", options=sorted(years), default=sorted(years))
+# Year filter
+years = sorted(cert_df['Expire_Year'].dropna().unique())
+selected_year = st.sidebar.selectbox("Select Expire Year", options=["All"] + list(years))
 
-    # Select month filter (allow multi-select)
-    selected_months = st.sidebar.multiselect("Select Expire Month(s)", options=sorted(months), default=sorted(months))
+# Month filter
+months = sorted(cert_df['Expire_Month'].dropna().unique())
+selected_month = st.sidebar.selectbox("Select Expire Month", options=["All"] + list(months))
 
-    # Filter dataframe based on selections
-    filtered_df = cert_df[
-        (cert_df['Expire_Year'].isin(selected_years)) &
-        (cert_df['Expire_Month'].isin(selected_months))
-    ]
+# Apply filters
+filtered_df = cert_df.copy()
 
-    # Show filtered data
-    st.subheader(f"Filtered Certificates ({len(filtered_df)} results)")
-    st.dataframe(filtered_df)
+if selected_cluster != "All":
+    filtered_df = filtered_df[filtered_df['URL_name'] == selected_cluster]
 
-else:
-    st.info("Please upload both API Certificate CSV and Wildcard Certificate CSV files from the sidebar.")
+if selected_year != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Year'] == selected_year]
+
+if selected_month != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Month'] == selected_month]
+
+st.subheader(f"Filtered Certificates ({len(filtered_df)})")
+st.dataframe(filtered_df)
+import streamlit as st
+import pandas as pd
+
+st.title("Certificate Viewer - OCP | VCC")
+
+# Load CSV files in the background
+api_df = pd.read_csv("api_certificate.csv")
+wildcard_df = pd.read_csv("wildcard_certificate.csv")
+
+# Add a column to identify certificate type
+api_df['Certificate_Type'] = 'API Certificate'
+wildcard_df['Certificate_Type'] = 'Wildcard Certificate'
+
+# Combine both dataframes
+cert_df = pd.concat([api_df, wildcard_df], ignore_index=True)
+
+# Assume 'URL_name' or 'Cluster' column represents cluster? 
+# If you want to filter by cluster, we need a column name for it.
+# Assuming you want to filter by 'URL_name' as cluster proxy
+clusters = cert_df['URL_name'].unique()
+clusters = sorted(clusters)
+
+# Sidebar filters
+st.sidebar.header("Filter Certificates")
+
+# Cluster filter (All or specific)
+selected_cluster = st.sidebar.selectbox("Select Cluster", options=["All"] + list(clusters))
+
+# Year filter
+years = sorted(cert_df['Expire_Year'].dropna().unique())
+selected_year = st.sidebar.selectbox("Select Expire Year", options=["All"] + list(years))
+
+# Month filter
+months = sorted(cert_df['Expire_Month'].dropna().unique())
+selected_month = st.sidebar.selectbox("Select Expire Month", options=["All"] + list(months))
+
+# Apply filters
+filtered_df = cert_df.copy()
+
+if selected_cluster != "All":
+    filtered_df = filtered_df[filtered_df['URL_name'] == selected_cluster]
+
+if selected_year != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Year'] == selected_year]
+
+if selected_month != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Month'] == selected_month]
+
+st.subheader(f"Filtered Certificates ({len(filtered_df)})")
+st.dataframe(filtered_df)
