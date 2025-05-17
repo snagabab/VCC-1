@@ -1,40 +1,54 @@
 import streamlit as st
 import pandas as pd
 
-# Load CSVs
-api_df = pd.read_csv("api_cert_data.csv")
-wildcard_df = pd.read_csv("wildcard_cert_data.csv")
+st.title("Certificate Viewer - OCP | VCC")
 
-# Combine dataframes
+# Load your CSVs (from local directory or path in deployment)
+api_df = pd.read_csv("api_certificate.csv")
+wildcard_df = pd.read_csv("wildcard_certificate.csv")
+
+# Clean column names (remove leading/trailing whitespace just in case)
+api_df.columns = api_df.columns.str.strip()
+wildcard_df.columns = wildcard_df.columns.str.strip()
+
+# Add certificate type to differentiate
+api_df['Certificate_Type'] = 'API Certificate'
+wildcard_df['Certificate_Type'] = 'Wildcard Certificate'
+
+# Combine
 combined_df = pd.concat([api_df, wildcard_df], ignore_index=True)
 
-# Clean column names
-combined_df.columns = combined_df.columns.str.strip()  # Remove extra spaces
+# Convert Month and Year to numeric
+combined_df['Expire_Month'] = pd.to_numeric(combined_df['Expire_Month'], errors='coerce')
+combined_df['Expire_Year'] = pd.to_numeric(combined_df['Expire_Year'], errors='coerce')
 
-# Debug: See what columns we have
-st.write("Columns in the combined DataFrame:", combined_df.columns.tolist())
+# Sidebar filters
+st.sidebar.header("Filter Certificates")
 
-# Now safely access the columns
-urls = sorted(combined_df['URL_name'].dropna().unique())
+# Cluster (URL_name)
+clusters = sorted(combined_df['URL_name'].dropna().unique())
+selected_cluster = st.sidebar.selectbox("Select Cluster", ["All"] + list(clusters))
+
+# Year
+years = sorted(combined_df['Expire_Year'].dropna().unique())
+selected_year = st.sidebar.selectbox("Select Expire Year", ["All"] + list(map(int, years)))
+
+# Month
 months = sorted(combined_df['Expire_Month'].dropna().unique())
-years = sorted(combined_df['Expire_Year'].dropna().astype(str).unique())
+selected_month = st.sidebar.selectbox("Select Expire Month", ["All"] + list(map(int, months)))
 
-st.title("Certificate Data Fetcher")
+# Filter logic
+filtered_df = combined_df.copy()
 
-selected_url = st.selectbox("Select URL", urls)
-selected_month = st.selectbox("Select Expire Month", months)
-selected_year = st.selectbox("Select Expire Year", years)
+if selected_cluster != "All":
+    filtered_df = filtered_df[filtered_df['URL_name'] == selected_cluster]
 
-if st.button("Fetch"):
-    filtered = combined_df[
-        (combined_df['URL_name'] == selected_url) &
-        (combined_df['Expire_Month'] == selected_month) &
-        (combined_df['Expire_Year'].astype(str) == selected_year)
-    ]
+if selected_year != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Year'] == int(selected_year)]
 
-    if filtered.empty:
-        st.info("No matching records found.")
-    else:
-        st.dataframe(filtered)
-        csv = filtered.to_csv(index=False)
-        st.download_button("Download CSV", data=csv, file_name="filtered_cert_data.csv", mime="text/csv")
+if selected_month != "All":
+    filtered_df = filtered_df[filtered_df['Expire_Month'] == int(selected_month)]
+
+# Display result
+st.subheader(f"Filtered Certificates ({len(filtered_df)})")
+st.dataframe(filtered_df)
