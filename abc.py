@@ -4,8 +4,8 @@ import pandas as pd
 st.title("Certificate Viewer - OCP | VCC")
 
 # Load your CSVs (from local directory or path in deployment)
-api_df = pd.read_csv("api_certificate.csv")
-wildcard_df = pd.read_csv("wildcard_certificate.csv")
+api_df = pd.read_csv("api_cert_data.csv")
+wildcard_df = pd.read_csv("wildcard_cert_data.csv")
 
 # Clean column names (remove leading/trailing whitespace just in case)
 api_df.columns = api_df.columns.str.strip()
