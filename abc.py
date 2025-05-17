@@ -1,29 +1,31 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Certificate Data Fetcher", layout="centered")
-
-# Load your CSVs
+# Load CSVs
 api_df = pd.read_csv("api_cert_data.csv")
 wildcard_df = pd.read_csv("wildcard_cert_data.csv")
 
-# Combine and clean
+# Combine dataframes
 combined_df = pd.concat([api_df, wildcard_df], ignore_index=True)
-combined_df.columns = combined_df.columns.str.strip()  # Remove any trailing spaces
 
-# Sidebar Title
-st.title("🔐 Certificate Data Fetcher")
+# Clean column names
+combined_df.columns = combined_df.columns.str.strip()  # Remove extra spaces
 
-# Dropdowns
+# Debug: See what columns we have
+st.write("Columns in the combined DataFrame:", combined_df.columns.tolist())
+
+# Now safely access the columns
 urls = sorted(combined_df['URL_name'].dropna().unique())
 months = sorted(combined_df['Expire_Month'].dropna().unique())
 years = sorted(combined_df['Expire_Year'].dropna().astype(str).unique())
 
-selected_url = st.selectbox("🌐 Select API/Wildcard URL", urls)
-selected_month = st.selectbox("📅 Select Expiry Month", months)
-selected_year = st.selectbox("📆 Select Expiry Year", years)
+st.title("Certificate Data Fetcher")
 
-if st.button("🚀 Fetch Certificate Details"):
+selected_url = st.selectbox("Select URL", urls)
+selected_month = st.selectbox("Select Expire Month", months)
+selected_year = st.selectbox("Select Expire Year", years)
+
+if st.button("Fetch"):
     filtered = combined_df[
         (combined_df['URL_name'] == selected_url) &
         (combined_df['Expire_Month'] == selected_month) &
@@ -31,16 +33,8 @@ if st.button("🚀 Fetch Certificate Details"):
     ]
 
     if filtered.empty:
-        st.warning("⚠️ No matching certificate records found.")
+        st.info("No matching records found.")
     else:
-        st.success("✅ Certificate details found below:")
-        st.dataframe(filtered, use_container_width=True)
-
-        # Download button
+        st.dataframe(filtered)
         csv = filtered.to_csv(index=False)
-        st.download_button(
-            label="📥 Download CSV",
-            data=csv,
-            file_name="filtered_cert_data.csv",
-            mime="text/csv"
-        )
+        st.download_button("Download CSV", data=csv, file_name="filtered_cert_data.csv", mime="text/csv")
