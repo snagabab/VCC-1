@@ -4,8 +4,8 @@ import pandas as pd
 st.title("Certificate Viewer - OCP | VCC")
 
 # Load CSV files in the background
-api_df = pd.read_csv("api_certificate.csv")
-wildcard_df = pd.read_csv("wildcard_certificate.csv")
+api_df = pd.read_csv("api.csv")
+wildcard_df = pd.read_csv("ssl.csv")
 
 # Add a column to identify certificate type
 api_df['Certificate_Type'] = 'API Certificate'
