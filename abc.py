@@ -3,52 +3,54 @@ import pandas as pd
 
 st.title("Certificate Viewer - OCP | VCC")
 
-# Load your CSVs (from local directory or path in deployment)
-api_df = pd.read_csv("api_cert_data.csv")
-wildcard_df = pd.read_csv("wildcard_cert_data.csv")
+# Upload files
+api_file = st.file_uploader("Upload API Certificate CSV", type="csv")
+wildcard_file = st.file_uploader("Upload Wildcard Certificate CSV", type="csv")
 
-# Clean column names (remove leading/trailing whitespace just in case)
-api_df.columns = api_df.columns.str.strip()
-wildcard_df.columns = wildcard_df.columns.str.strip()
+if api_file is not None and wildcard_file is not None:
+    api_df = pd.read_csv(api_file)
+    wildcard_df = pd.read_csv(wildcard_file)
 
-# Add certificate type to differentiate
-api_df['Certificate_Type'] = 'API Certificate'
-wildcard_df['Certificate_Type'] = 'Wildcard Certificate'
+    # Clean column names
+    api_df.columns = api_df.columns.str.strip()
+    wildcard_df.columns = wildcard_df.columns.str.strip()
 
-# Combine
-combined_df = pd.concat([api_df, wildcard_df], ignore_index=True)
+    # Add certificate type
+    api_df['Certificate_Type'] = 'API'
+    wildcard_df['Certificate_Type'] = 'Wildcard'
 
-# Convert Month and Year to numeric
-combined_df['Expire_Month'] = pd.to_numeric(combined_df['Expire_Month'], errors='coerce')
-combined_df['Expire_Year'] = pd.to_numeric(combined_df['Expire_Year'], errors='coerce')
+    # Combine
+    combined_df = pd.concat([api_df, wildcard_df], ignore_index=True)
+    combined_df['Expire_Month'] = pd.to_numeric(combined_df['Expire_Month'], errors='coerce')
+    combined_df['Expire_Year'] = pd.to_numeric(combined_df['Expire_Year'], errors='coerce')
 
-# Sidebar filters
-st.sidebar.header("Filter Certificates")
+    # Sidebar filters
+    st.sidebar.header("Filter Certificates")
 
-# Cluster (URL_name)
-clusters = sorted(combined_df['URL_name'].dropna().unique())
-selected_cluster = st.sidebar.selectbox("Select Cluster", ["All"] + list(clusters))
+    cert_types = ["All", "API", "Wildcard"]
+    selected_cert_type = st.sidebar.selectbox("Select Cluster", cert_types)
 
-# Year
-years = sorted(combined_df['Expire_Year'].dropna().unique())
-selected_year = st.sidebar.selectbox("Select Expire Year", ["All"] + list(map(int, years)))
+    years = sorted(combined_df['Expire_Year'].dropna().unique())
+    selected_year = st.sidebar.selectbox("Select Expire Year", ["All"] + list(map(int, years)))
 
-# Month
-months = sorted(combined_df['Expire_Month'].dropna().unique())
-selected_month = st.sidebar.selectbox("Select Expire Month", ["All"] + list(map(int, months)))
+    months = sorted(combined_df['Expire_Month'].dropna().unique())
+    selected_month = st.sidebar.selectbox("Select Expire Month", ["All"] + list(map(int, months)))
 
-# Filter logic
-filtered_df = combined_df.copy()
+    # Filter
+    filtered_df = combined_df.copy()
 
-if selected_cluster != "All":
-    filtered_df = filtered_df[filtered_df['URL_name'] == selected_cluster]
+    if selected_cert_type != "All":
+        filtered_df = filtered_df[filtered_df['Certificate_Type'] == selected_cert_type]
 
-if selected_year != "All":
-    filtered_df = filtered_df[filtered_df['Expire_Year'] == int(selected_year)]
+    if selected_year != "All":
+        filtered_df = filtered_df[filtered_df['Expire_Year'] == int(selected_year)]
 
-if selected_month != "All":
-    filtered_df = filtered_df[filtered_df['Expire_Month'] == int(selected_month)]
+    if selected_month != "All":
+        filtered_df = filtered_df[filtered_df['Expire_Month'] == int(selected_month)]
 
-# Display result
-st.subheader(f"Filtered Certificates ({len(filtered_df)})")
-st.dataframe(filtered_df)
+    # Show result
+    st.subheader(f"Filtered Certificates ({len(filtered_df)})")
+    st.dataframe(filtered_df)
+
+else:
+    st.warning("Please upload both API and Wildcard certificate CSV files.")
