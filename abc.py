@@ -1,44 +1,47 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
 
-# Load CSVs in background
+# Load CSV files in the background
 api_df = pd.read_csv("api_cert_data.csv")
 wildcard_df = pd.read_csv("wildcard_cert_data.csv")
 
+# Combine URLs from both dataframes for dropdown (unique)
+urls_api = api_df['URL_name'].dropna().unique().tolist()
+urls_wildcard = wildcard_df['Common_name'].dropna().unique().tolist()
+all_urls = sorted(set(urls_api + urls_wildcard))
+
+# Unique months and years from both dfs combined
+all_months = sorted(set(api_df['Expire_Month'].dropna().unique()) | set(wildcard_df['Expire_Month'].dropna().unique()))
+all_years = sorted(set(api_df['Expire_Year'].dropna().astype(str).unique()) | set(wildcard_df['Expire_Year'].dropna().astype(str).unique()))
+
 st.title("Certificate Data Fetcher")
 
-# Input fields
-url_input = st.text_input("Enter API or Wildcard URL")
-month_input = st.text_input("Enter Expire Month (e.g. January)")
-year_input = st.text_input("Enter Expire Year (e.g. 2025)")
+# Dropdown inputs
+selected_url = st.selectbox("Select API or Wildcard URL", options=all_urls)
+selected_month = st.selectbox("Select Expire Month", options=all_months)
+selected_year = st.selectbox("Select Expire Year", options=all_years)
 
 if st.button("Fetch"):
-    if not url_input or not month_input or not year_input:
-        st.error("Please fill all the input fields.")
+    # Filter both dataframes for matches
+    filtered_api = api_df[
+        (api_df['URL_name'] == selected_url) &
+        (api_df['Expire_Month'] == selected_month) &
+        (api_df['Expire_Year'].astype(str) == selected_year)
+    ]
+    filtered_wildcard = wildcard_df[
+        (wildcard_df['Common_name'] == selected_url) &
+        (wildcard_df['Expire_Month'] == selected_month) &
+        (wildcard_df['Expire_Year'].astype(str) == selected_year)
+    ]
+
+    # Combine results
+    filtered_df = pd.concat([filtered_api, filtered_wildcard], ignore_index=True)
+
+    if filtered_df.empty:
+        st.info("No records found for the selected inputs.")
     else:
-        # Select which df to search in based on input URL presence in either df
-        if url_input in api_df['URL_name'].values:
-            df = api_df
-        elif url_input in wildcard_df['Common_name'].values:
-            df = wildcard_df
-        else:
-            st.warning("URL not found in any data.")
-            st.stop()
+        st.dataframe(filtered_df)
 
-        # Filter dataframe on month and year too (case insensitive)
-        filtered_df = df[
-            (df['URL_name'].str.contains(url_input, case=False, na=False) | 
-             df['Common_name'].str.contains(url_input, case=False, na=False))
-            & (df['Expire_Month'].str.lower() == month_input.lower())
-            & (df['Expire_Year'].astype(str) == year_input)
-        ]
-
-        if filtered_df.empty:
-            st.info("No records found for this input.")
-        else:
-            st.dataframe(filtered_df)
-
-            # CSV download
-            csv_data = filtered_df.to_csv(index=False)
-            st.download_button("Download CSV", data=csv_data, file_name="filtered_cert_data.csv", mime="text/csv")
+        # Download CSV button
+        csv_data = filtered_df.to_csv(index=False)
+        st.download_button("Download CSV", data=csv_data, file_name="filtered_cert_data.csv", mime="text/csv")
