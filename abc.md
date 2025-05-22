@@ -1,8 +1,9 @@
+
 # Cluster information - Hosted on Azure
 
 Openshift supports both clusters hosted in Azure cloud and On-Prem(VmWare) platform
 
-Dedicated clusters are also set up for application like `PIE`, `Car services`, `Maximo` and `CIL`
+Dedicated clusters are also set up forapplication like `PIE`, `Car services`, `Maximo` and `CIL`
 
 !!! tip "Visit [OCP Report](https://ocpreport-ocpreport-prod.apps.ocp-shared-v1-nonprod.volvocars.biz/ocpreport/ocr/index.html) to view complete list of clusters and other matrices"
 
@@ -33,10 +34,11 @@ Dedicated clusters are also set up for application like `PIE`, `Car services`, `
 | `OBSERVABILITY PROD`            | `Azure`     | `WEU`       | `Prod`       | `10.46.24.64/26`    | `10.46.24.126`| [Console](https://console-openshift-console.apps.observability-prod.volvocars.biz/)            | `https://api.observability-prod.volvocars.biz:6443`        | `NA`                 |
 | `TURBONOMIC PROD`               | `Azure`     | `WEU`       | `Prod`       | `10.46.32.64/26`    | `10.46.32.126`| [Console](https://console-openshift-console.apps.turbonomic-prod.volvocars.biz/)               | `https://api.turbonomic-prod.volvocars.biz:6443`           | `NA`                 |
 
+
+
 !!! note
 
     - `Cpmpute Subnet` to be used for for firewall request as source subnet.
-    - `Ingress IP` to be used as destination IP for firewall rules for inbound traffic from outside world to Openshift cluster.
-    - Cluster `Console` URL is to be used for Openshift user login.
-    - Cluster `API` URL is to be used in CLI `oc login` and service to service communication in Openshift.
-    - Vault Authentication backend is to be used in Hashicorp vault.
+    - `Ingress IP` to be used for LB backend Pool IPs for custom URL's VIP, which is the default IP for all Ingress to the cluster.
+    - `API URL` is needed for accessing API cluster or for `oc` login.
+    - `Vault Auth Backend` is used for onboarding namespace into `Central Vault`, for more details please rever [Namesoace Onboard](https://backstage.volvocars.biz/docs/default/component/ocp-admin-documentation/instructions/vault-namespace-onboard/)
